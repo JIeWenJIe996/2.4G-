@@ -1,4 +1,4 @@
-$ErrorActionPreference = 'Stop'
+﻿$ErrorActionPreference = 'Stop'
 
 $root = Split-Path -Parent $MyInvocation.MyCommand.Path
 # 使用系统 .NET Framework 编译器，不依赖 dotnet CLI 或 NuGet 还原。

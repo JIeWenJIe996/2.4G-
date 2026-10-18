@@ -1,0 +1,13 @@
+# 本地调试、抓包和编辑器记录（不属于发布内容）
+.spike/
+.dsh-edit-review*.json
+.vs/
+.vscode/
+
+# 编译中间产物
+*.pdb
+*.log
+bin/
+obj/
+
+# 注意：2.4GBattery.exe 是发布产物，故意不忽略

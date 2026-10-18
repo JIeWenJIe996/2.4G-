@@ -22,6 +22,7 @@ namespace MchoseBattery
         // 工作线程只提交 Reading；控件和 NotifyIcon 由 UI 线程统一更新。
         private volatile Reading pending;
         private System.Windows.Forms.Timer uiPump;
+        private int pumpCount;
         private bool iconDark;
 
         public TrayContext(bool showOnStart)
@@ -41,10 +42,16 @@ namespace MchoseBattery
 
             uiPump = new System.Windows.Forms.Timer();
             uiPump.Interval = 250;
+            pumpCount = 0;
             uiPump.Tick += delegate
             {
-                bool dark = IconFactory.TaskbarIsDark();
-                if (iconDark != dark) { iconDark = dark; UpdateTrayIcon(); }
+                // 主题变化很慢，没必要每 250ms 读一次注册表（原先每秒 4 次）。
+                if (++pumpCount >= 20)
+                {
+                    pumpCount = 0;
+                    bool dark = IconFactory.TaskbarIsDark();
+                    if (iconDark != dark) { iconDark = dark; UpdateTrayIcon(); }
+                }
                 Reading r = pending;
                 if (r != null)
                 {
@@ -158,8 +165,10 @@ namespace MchoseBattery
 
         private void Apply(Reading r)
         {
+            // 电量通常几分钟才变一次，值没变就不重建图标（避免无谓的 GDI 分配）。
+            bool changed = last == null || last.Connected != r.Connected || last.Percent != r.Percent;
             last = r;
-            UpdateTrayIcon();
+            if (changed) UpdateTrayIcon();
 
             string text;
             if (!r.Connected)
