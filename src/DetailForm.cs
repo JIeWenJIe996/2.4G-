@@ -92,12 +92,12 @@ namespace MchoseBattery
 
         private void ApplyScale()
         {
-            ClientSize = new Size(Px(LogicalWidth), Px(settingsPanel.Visible ? 610 : LogicalHeight));
+            ClientSize = new Size(Px(LogicalWidth), Px(settingsPanel.Visible ? 622 : LogicalHeight));
             refresh.Bounds = new Rectangle(Px(244), Px(396), Px(132), Px(38));
             quit.Bounds = new Rectangle(Px(24), Px(396), Px(100), Px(38));
             close.Bounds = new Rectangle(Px(344), Px(18), Px(32), Px(32));
             settings.Bounds = new Rectangle(Px(272), Px(20), Px(60), Px(30));
-            settingsPanel.Bounds = new Rectangle(Px(24), Px(94), Px(352), Px(492));
+            settingsPanel.Bounds = new Rectangle(Px(24), Px(94), Px(352), Px(504));
             foreach (Control control in Controls)
                 if (control is FluentButton) ((FluentButton)control).UiScale = scale;
             settingsPanel.Configure(theme, scale);
@@ -213,7 +213,7 @@ namespace MchoseBattery
             Color status = !connected || !known ? theme.Muted : battery;
 
             using (Pen border = new Pen(theme.Border))
-            using (GraphicsPath outer = UiDrawing.Round(new RectangleF(.5f, .5f, 399, settingsPanel.Visible ? 609 : 457), 8))
+            using (GraphicsPath outer = UiDrawing.Round(new RectangleF(.5f, .5f, 399, settingsPanel.Visible ? 621 : 457), 8))
                 g.DrawPath(border, outer);
 
             UiDrawing.Text(g, settingsPanel.Visible ? "设置" : "鼠标电量", 24, 22, 240, 28, 20, theme.Text, true);

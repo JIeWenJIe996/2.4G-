@@ -14,6 +14,7 @@ namespace MchoseBattery
         public bool AlertsEnabled = true;
         public bool ColorfulIcon = true;
         public string TrayStyle = "number";
+        public string TrayFont = TrayFonts.DefaultName;
         public bool UseCustomIconColor;
         public string CustomIconColor = "#FFFFFF";
         private readonly string storagePath;
@@ -35,6 +36,7 @@ namespace MchoseBattery
             AlertsEnabled = other.AlertsEnabled;
             ColorfulIcon = other.ColorfulIcon;
             TrayStyle = other.TrayStyle;
+            TrayFont = other.TrayFont;
             UseCustomIconColor = other.UseCustomIconColor;
             CustomIconColor = other.CustomIconColor;
         }
@@ -59,6 +61,7 @@ namespace MchoseBattery
                     else if (k == "AlertsEnabled" && (v == "0" || v == "1")) s.AlertsEnabled = v == "1";
                     else if (k == "ColorfulIcon" && (v == "0" || v == "1")) s.ColorfulIcon = v == "1";
                     else if (k == "TrayStyle" && (v == "number" || v == "battery")) s.TrayStyle = v;
+                    else if (k == "TrayFont") s.TrayFont = TrayFonts.Resolve(v);
                     else if (k == "UseCustomIconColor" && (v == "0" || v == "1")) s.UseCustomIconColor = v == "1";
                     else if (k == "CustomIconColor")
                     {
@@ -84,6 +87,7 @@ namespace MchoseBattery
                     "AlertThreshold=" + AlertThreshold, "RefreshSeconds=" + RefreshSeconds,
                     "AlertsEnabled=" + (AlertsEnabled ? "1" : "0"),
                     "ColorfulIcon=" + (ColorfulIcon ? "1" : "0"), "TrayStyle=" + TrayStyle,
+                    "TrayFont=" + TrayFonts.Resolve(TrayFont),
                     "UseCustomIconColor=" + (UseCustomIconColor ? "1" : "0"), "CustomIconColor=" + CustomIconColor });
                 if (File.Exists(path)) File.Replace(temporary, path, null);
                 else File.Move(temporary, path);

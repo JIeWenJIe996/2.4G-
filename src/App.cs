@@ -219,6 +219,7 @@ namespace MchoseBattery
             Color custom;
             if (!Settings.TryParseColor(next.CustomIconColor, out custom)) return "请输入有效颜色，如 #FFFFFF";
             next.CustomIconColor = Settings.ToHex(custom);
+            next.TrayFont = TrayFonts.Resolve(next.TrayFont);
             if (next.RefreshSeconds < 15 || next.RefreshSeconds > 3600 || next.AlertThreshold < 1 || next.AlertThreshold > 99 ||
                 (next.TrayStyle != "number" && next.TrayStyle != "battery")) return "设置数值无效，请检查后重试";
             // 启动项和配置文件分别保存。配置写入失败时，尝试恢复原来的启动状态。

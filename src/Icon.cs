@@ -92,12 +92,15 @@ namespace MchoseBattery
                 else
                 {
                     string text = known ? percent.ToString() : "--";
+                    if (TrayFonts.Resolve(settings.TrayFont) == TrayFonts.CalculatorName)
+                        SevenSegmentFont.Draw(g, text, new RectangleF(.4f, .9f, 15.2f, 14.2f), ink);
+                    else
                     using (GraphicsPath glyph = new GraphicsPath())
-                    using (FontFamily font = new FontFamily("Segoe UI"))
+                    using (FontFamily font = new FontFamily(TrayFonts.Resolve(settings.TrayFont)))
                     using (StringFormat format = new StringFormat(StringFormat.GenericTypographic))
                     using (SolidBrush brush = new SolidBrush(ink))
                     {
-                        glyph.AddString(text, font, (int)FontStyle.Bold, 16, PointF.Empty, format);
+                        glyph.AddString(text, font, (int)TrayFonts.Weight(font), 16, PointF.Empty, format);
                         RectangleF bounds = glyph.GetBounds();
                         // 数字尽量占满高度；三位数只压缩宽度，避免 100 变得过小。
                         float sy = (known ? 14.2f : 3f) / bounds.Height;

@@ -14,6 +14,7 @@ namespace MchoseBattery
         private readonly NumericUpDown interval = new NumericUpDown();
         private readonly NumericUpDown threshold = new NumericUpDown();
         private readonly ComboBox style = new ComboBox();
+        private readonly ComboBox fontChoice = new ComboBox();
         private readonly FluentButton save = new FluentButton("保存设置", true);
         private readonly FluentButton cancel = new FluentButton("取消", false);
         private readonly Func<Settings, string> onSave;
@@ -73,9 +74,40 @@ namespace MchoseBattery
                 colorHex.Enabled = pickColor.Enabled = colorMode.SelectedIndex == 2;
                 Invalidate();
             };
-            style.SelectedIndexChanged += delegate { Invalidate(); };
+            fontChoice.DropDownStyle = ComboBoxStyle.DropDownList;
+            fontChoice.FlatStyle = FlatStyle.Flat;
+            fontChoice.DrawMode = DrawMode.OwnerDrawFixed;
+            fontChoice.AccessibleName = "托盘数字字体";
+            fontChoice.Items.AddRange(TrayFonts.Available);
+            fontChoice.DropDownWidth = 240;
+            fontChoice.DrawItem += delegate(object sender, DrawItemEventArgs e)
+            {
+                using (SolidBrush brush = new SolidBrush((e.State & DrawItemState.Selected) != 0 ? theme.AccentSubtle : theme.Card))
+                    e.Graphics.FillRectangle(brush, e.Bounds);
+                int index = e.Index < 0 ? fontChoice.SelectedIndex : e.Index;
+                if (index >= 0 && fontChoice.Items[index].ToString() == TrayFonts.CalculatorName)
+                {
+                    Rectangle label = new Rectangle(e.Bounds.X, e.Bounds.Y, e.Bounds.Width - (int)(42 * scale), e.Bounds.Height);
+                    TextRenderer.DrawText(e.Graphics, TrayFonts.CalculatorName, fontChoice.Font, label,
+                        theme.Text, TextFormatFlags.Left | TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis);
+                    SevenSegmentFont.Draw(e.Graphics, "100", new RectangleF(
+                        e.Bounds.Right - 36 * scale, e.Bounds.Y + 3 * scale, 32 * scale, e.Bounds.Height - 6 * scale), theme.Text);
+                }
+                else if (index >= 0)
+                    using (FontFamily family = new FontFamily(fontChoice.Items[index].ToString()))
+                    using (Font sample = new Font(family, 12 * scale, TrayFonts.Weight(family), GraphicsUnit.Pixel))
+                        TextRenderer.DrawText(e.Graphics, fontChoice.Items[index] + "  100", sample,
+                            e.Bounds, theme.Text, TextFormatFlags.Left | TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis);
+                e.DrawFocusRectangle();
+            };
+            fontChoice.SelectedIndexChanged += delegate { Invalidate(); };
+            style.SelectedIndexChanged += delegate
+            {
+                fontChoice.Enabled = style.SelectedIndex != 1;
+                Invalidate();
+            };
             pickColor.Click += delegate { ChooseColor(); };
-            Controls.AddRange(new Control[] { autoStart, interval, alerts, threshold, style, colorMode, pickColor, colorHex, cancel, save });
+            Controls.AddRange(new Control[] { autoStart, interval, alerts, threshold, style, fontChoice, colorMode, pickColor, colorHex, cancel, save });
             for (int i = 0; i < Controls.Count; i++) Controls[i].TabIndex = i;
             alerts.CheckedChanged += delegate { threshold.Enabled = alerts.Checked; };
             cancel.Click += delegate { onDone(); };
@@ -94,6 +126,8 @@ namespace MchoseBattery
             colorMode.SelectedIndex = settings.UseCustomIconColor ? 2 : settings.ColorfulIcon ? 0 : 1;
             colorHex.Text = settings.CustomIconColor;
             style.SelectedIndex = settings.TrayStyle == "battery" ? 1 : 0;
+            fontChoice.SelectedItem = TrayFonts.Resolve(settings.TrayFont);
+            fontChoice.Enabled = style.SelectedIndex != 1;
             error = "";
             Invalidate();
         }
@@ -105,6 +139,7 @@ namespace MchoseBattery
             draft.AlertThreshold = (int)threshold.Value;
             draft.AlertsEnabled = alerts.Checked;
             draft.TrayStyle = style.SelectedIndex == 1 ? "battery" : "number";
+            draft.TrayFont = TrayFonts.Resolve(fontChoice.SelectedItem as string);
             draft.ColorfulIcon = colorMode.SelectedIndex == 0;
             draft.UseCustomIconColor = colorMode.SelectedIndex == 2;
             Color color;
@@ -153,18 +188,20 @@ namespace MchoseBattery
                 editorFont = new Font("Microsoft YaHei UI", 12 * scale, FontStyle.Regular, GraphicsUnit.Pixel);
             }
             BackColor = theme.Background;
-            SetBounds(autoStart, 284, 16, 44, 24);
-            SetBounds(interval, 236, 80, 92, 30);
-            SetBounds(alerts, 284, 154, 44, 24);
-            SetBounds(threshold, 236, 197, 68, 28);
-            SetBounds(style, 172, 270, 156, 30);
+            SetBounds(autoStart, 284, 13, 44, 24);
+            SetBounds(interval, 236, 70, 92, 30);
+            SetBounds(alerts, 284, 132, 44, 24);
+            SetBounds(threshold, 236, 180, 68, 28);
+            SetBounds(style, 172, 238, 156, 30);
+            SetBounds(fontChoice, 172, 296, 156, 30);
+            fontChoice.ItemHeight = (int)Math.Round(22 * scale);
             style.ItemHeight = (int)Math.Round(22 * scale);
-            SetBounds(colorMode, 172, 334, 156, 30);
+            SetBounds(colorMode, 172, 354, 156, 30);
             colorMode.ItemHeight = (int)Math.Round(22 * scale);
-            SetBounds(pickColor, 16, 384, 128, 30);
-            SetBounds(colorHex, 164, 386, 112, 28);
-            SetBounds(cancel, 0, 454, 100, 38);
-            SetBounds(save, 220, 454, 132, 38);
+            SetBounds(pickColor, 16, 402, 128, 30);
+            SetBounds(colorHex, 164, 404, 112, 28);
+            SetBounds(cancel, 0, 466, 100, 38);
+            SetBounds(save, 220, 466, 132, 38);
             foreach (Control control in Controls)
             {
                 control.ForeColor = theme.Text;
@@ -200,29 +237,32 @@ namespace MchoseBattery
             Graphics g = e.Graphics;
             g.ScaleTransform(scale, scale);
             g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
-            int[] ys = { 0, 66, 132, 254, 324 };
-            int[] hs = { 58, 58, 114, 62, 110 };
+            int[] ys = { 0, 58, 116, 226, 284, 342 };
+            int[] hs = { 50, 50, 102, 50, 50, 102 };
             for (int i = 0; i < ys.Length; i++)
                 UiDrawing.FillRound(g, new RectangleF(.5f, ys[i] + .5f, 351, hs[i] - 1), 8, theme.Card, theme.Border);
-            Label(g, "开机自动启动", 16, 8, 190, 20, 12, theme.Text);
-            Label(g, "登录 Windows 后在托盘运行", 16, 29, 240, 18, 10, theme.Muted);
-            Label(g, "自动刷新", 16, 74, 180, 20, 12, theme.Text);
-            Label(g, "间隔 15–3600 秒", 16, 95, 200, 18, 10, theme.Muted);
-            Label(g, "低电量提醒", 16, 142, 200, 20, 12, theme.Text);
-            Label(g, "每 30 分钟最多提醒一次", 16, 163, 250, 18, 10, theme.Muted);
-            Label(g, "电量低于", 16, 199, 200, 24, 12, theme.Muted);
-            Label(g, "%", 312, 199, 24, 24, 12, theme.Muted);
-            Label(g, "托盘图标", 16, 262, 150, 20, 12, theme.Text);
-            Label(g, "更换任务栏的显示方式", 16, 283, 150, 18, 10, theme.Muted);
-            Label(g, "字体颜色", 16, 332, 150, 20, 12, theme.Text);
-            Label(g, "自定义托盘显示颜色", 16, 353, 150, 18, 10, theme.Muted);
+            Label(g, "开机自动启动", 16, 4, 190, 20, 12, theme.Text);
+            Label(g, "登录 Windows 后在托盘运行", 16, 25, 240, 18, 10, theme.Muted);
+            Label(g, "自动刷新", 16, 62, 180, 20, 12, theme.Text);
+            Label(g, "间隔 15–3600 秒", 16, 83, 200, 18, 10, theme.Muted);
+            Label(g, "低电量提醒", 16, 124, 200, 20, 12, theme.Text);
+            Label(g, "每 30 分钟最多提醒一次", 16, 145, 250, 18, 10, theme.Muted);
+            Label(g, "电量低于", 16, 182, 200, 24, 12, theme.Muted);
+            Label(g, "%", 312, 182, 24, 24, 12, theme.Muted);
+            Label(g, "托盘图标", 16, 230, 150, 20, 12, theme.Text);
+            Label(g, "更换任务栏的显示方式", 16, 251, 150, 18, 10, theme.Muted);
+            Label(g, "数字字体", 16, 288, 150, 20, 12, theme.Text);
+            Label(g, "仅用于托盘数字", 16, 309, 150, 18, 10, theme.Muted);
+            Label(g, "字体颜色", 16, 350, 150, 20, 12, theme.Text);
+            Label(g, "自定义托盘显示颜色", 16, 371, 150, 18, 10, theme.Muted);
             Settings preview = new Settings {
                 ColorfulIcon = colorMode.SelectedIndex == 0, UseCustomIconColor = colorMode.SelectedIndex == 2,
+                TrayFont = fontChoice.SelectedItem as string,
                 CustomIconColor = colorHex.Text, TrayStyle = style.SelectedIndex == 1 ? "battery" : "number" };
             // 预览复用托盘的绘制逻辑；按实际 DPI 生成位图，避免先画小图再拉伸。
             using (Bitmap icon = IconFactory.RenderPreview(100, true, (int)Math.Round(28 * scale), preview, theme.Dark))
-                g.DrawImage(icon, new Rectangle(300, 384, 28, 28));
-            if (!string.IsNullOrEmpty(error)) Label(g, error, 0, 434, 352, 19, 10, theme.Warning);
+                g.DrawImage(icon, new Rectangle(300, 402, 28, 28));
+            if (!string.IsNullOrEmpty(error)) Label(g, error, 0, 444, 352, 19, 10, theme.Warning);
         }
 
         private static void Label(Graphics g, string text, int x, int y, int w, int h, int size, Color color)
